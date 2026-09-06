@@ -47,8 +47,15 @@ def _ceil(x):
     return int(math.ceil(x - 1e-9))
 
 
-def pack(text, miktar, birim, gun=0.0):
-    return {"text": text, "miktar": float(miktar), "birim": birim, "gun": float(gun)}
+def pack(text, miktar, birim, gun=0.0, metraj=None, metraj_birim=None):
+    m = float(miktar) if metraj is None else float(metraj)
+    mb = birim if metraj_birim is None else metraj_birim
+    if metraj_birim and metraj_birim != birim:
+        text = text + "\nIscilik metraji: {:.2f} {}".format(m, mb)
+    return {
+        "text": text, "miktar": float(miktar), "birim": birim, "gun": float(gun),
+        "metraj": m, "metraj_birim": mb,
+    }
 
 
 def alan_of(a):
@@ -116,7 +123,7 @@ def calc_kagir(adet_m2, isim, usta=10):
         f = _ceil(net * (1 + a["fire"]))
         t = "Duvar alani: {:.2f} m2\nNet {}: {} adet\nFire dahil: {} adet".format(
             alan, isim, net, f)
-        return pack(t, f, "adet", alan / float(usta))
+        return pack(t, f, "adet", alan / float(usta), alan, "m2")
     return _fn
 
 
@@ -131,7 +138,7 @@ def calc_fayans(parca, olcu, kutu_adet):
             "Alan: {:.2f} m2\nNet: {} adet ({})\nFire dahil: {} adet\n"
             "Kutu: {} ({}/kutu ~ {:.2f} m2)"
         ).format(alan, net, olcu, f, kutu, kutu_adet, km2)
-        return pack(t, kutu, "kutu", alan / 14.0)
+        return pack(t, kutu, "kutu", alan / 14.0, alan, "m2")
     return _fn
 
 
@@ -141,7 +148,7 @@ def calc_kg(kg_m2, isim, torba=25, usta=18):
         f = alan * kg_m2 * (1 + a["fire"])
         t = "{}\nAlan: {:.2f} m2\nFire dahil: {:.1f} kg\n{} kg torba: {}".format(
             isim, alan, f, torba, _ceil(f / float(torba)))
-        return pack(t, f, "kg", alan / float(usta))
+        return pack(t, f, "kg", alan / float(usta), alan, "m2")
     return _fn
 
 
@@ -151,7 +158,7 @@ def calc_parke(paket_alani, isim):
         p = _ceil(alan * (1 + a["fire"]) / paket_alani)
         t = "Alan: {:.2f} m2\n{}: {} paket\nToplam: {:.2f} m2".format(
             alan, isim, p, p * paket_alani)
-        return pack(t, p, "paket", alan / 22.0)
+        return pack(t, p, "paket", alan / 22.0, alan, "m2")
     return _fn
 
 
@@ -160,7 +167,7 @@ def calc_alcipan(a):
     net = _ceil(alan / 3.0)
     f = _ceil(alan * (1 + a["fire"]) / 3.0)
     t = "Alan: {:.2f} m2\nNet: {} plaka\nFire dahil: {} plaka".format(alan, net, f)
-    return pack(t, f, "plaka", alan / 18.0)
+    return pack(t, f, "plaka", alan / 18.0, alan, "m2")
 
 
 def calc_boya(m2_lt, kat, isim):
@@ -168,7 +175,7 @@ def calc_boya(m2_lt, kat, isim):
         alan = alan_of(a)
         lt = alan * kat / float(m2_lt) * (1 + a["fire"])
         t = "{}\nAlan: {:.2f} m2\nFire dahil: {:.2f} litre".format(isim, alan, lt)
-        return pack(t, lt, "lt", alan / 45.0)
+        return pack(t, lt, "lt", alan / 45.0, alan, "m2")
     return _fn
 
 
@@ -184,7 +191,7 @@ def calc_manto(a):
 def calc_kiremit(a):
     alan = alan_of(a)
     f = _ceil(alan * 15 * (1 + a["fire"]))
-    return pack("Cati: {:.2f} m2\nKiremit: {} adet".format(alan, f), f, "adet", alan / 18.0)
+    return pack("Cati: {:.2f} m2\nKiremit: {} adet".format(alan, f), f, "adet", alan / 18.0, alan, "m2")
 
 
 def calc_membran(a):
@@ -194,13 +201,13 @@ def calc_membran(a):
 
 def calc_osb(a):
     f = _ceil(alan_of(a) * (1 + a["fire"]) / 3.125)
-    return pack("OSB 125x250: {} plaka".format(f), f, "plaka", alan_of(a) / 30.0)
+    return pack("OSB 125x250: {} plaka".format(f), f, "plaka", alan_of(a) / 30.0, alan_of(a), "m2")
 
 
 def calc_mahya(a):
     m = a["x"] * (1 + a["fire"])
     ad = _ceil(m / 0.33)
-    return pack("Mahya: {:.2f} m\nAdet: {}".format(m, ad), ad, "adet", m / 40.0)
+    return pack("Mahya: {:.2f} m\nAdet: {}".format(m, ad), ad, "adet", m / 40.0, m, "m")
 
 
 def calc_metre(isim):
@@ -247,7 +254,7 @@ def calc_silte(a):
     alan = alan_of(a) * (1 + a["fire"])
     r = _ceil(alan / 15.0)
     t = "Silte: {:.2f} m2\nRulo 15 m2: {}".format(alan, r)
-    return pack(t, r, "rulo", alan / 80.0)
+    return pack(t, r, "rulo", alan / 80.0, alan, "m2")
 
 
 CATEGORIES = {
@@ -436,8 +443,8 @@ class HesapScreen(Screen):
             text="%10 Fire", values=["%5 Fire", "%10 Fire", "%15 Fire"],
             size_hint_y=None, height=dp(46), font_size=sp(14))
         box.add_widget(self.sp_fire)
-        self.in_fiyat_m = self._field(box, "Malzeme birim fiyati (TL)", "0")
-        self.in_fiyat_i = self._field(box, "Iscilik birim fiyati (TL)", "0")
+        self.in_fiyat_m = self._field(box, "Malzeme birim fiyati (TL / kutu, adet, kg)", "0")
+        self.in_fiyat_i = self._field(box, "Iscilik METRAJ fiyati (TL / m2, m3, m)", "0")
         row = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(8))
         row.add_widget(ui_btn("TEMIZLE", self.temizle, 52, 15))
         row.add_widget(ui_btn("HESAPLA", self.hesapla, 52, 16))
@@ -500,7 +507,9 @@ class HesapScreen(Screen):
             fm = _num(self.in_fiyat_m.text)
             fi = _num(self.in_fiyat_i.text)
             mal = res["miktar"] * fm
-            isc = res["miktar"] * fi
+            met = res.get("metraj", res["miktar"])
+            mb = res.get("metraj_birim", res["birim"])
+            isc = met * fi
             ara = mal + isc
             kdv = ara * app.kdv if app.kdv_on else 0.0
             extra = ""
@@ -508,9 +517,13 @@ class HesapScreen(Screen):
                 extra += "\nUsta gunu (tahmini): {:.1f}".format(res["gun"])
             if fm or fi:
                 extra += (
-                    "\n---\nMiktar: {:.2f} {}\nMalzeme: {:.2f} TL\nIscilik: {:.2f} TL"
+                    "\n---\nMalzeme: {:.2f} {} x {:.2f} = {:.2f} TL"
+                    "\nIscilik: {:.2f} {} x {:.2f} = {:.2f} TL"
                     "\nAra toplam: {:.2f} TL"
-                ).format(res["miktar"], res["birim"], mal, isc, ara)
+                ).format(
+                    res["miktar"], res["birim"], fm, mal,
+                    met, mb, fi, isc, ara,
+                )
                 if app.kdv_on:
                     extra += "\nKDV %20: {:.2f} TL\nGenel: {:.2f} TL".format(kdv, ara + kdv)
             text = res["text"] + extra
@@ -518,6 +531,7 @@ class HesapScreen(Screen):
             self.last = {
                 "kat": self.category, "malzeme": self.spinner.text, "sonuc": text,
                 "miktar": res["miktar"], "birim": res["birim"],
+                "metraj": met, "metraj_birim": mb,
                 "malzeme_tutar": mal, "iscilik_tutar": isc, "kdv": kdv,
                 "genel": (ara + kdv) if (fm or fi) else 0.0,
             }
