@@ -1,8 +1,8 @@
 [app]
-title = Cifciler Hesaplayici
+title = Cifciler Insaat
 package.name = cifciler
 package.domain = org.cifciler
-version = 2.0
+version = 3.0
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,txt
@@ -13,7 +13,7 @@ requirements = python3,kivy==2.2.1
 orientation = portrait
 fullscreen = 0
 
-android.permissions = INTERNET
+android.permissions = INTERNET,VIBRATE
 android.api = 31
 android.minapi = 21
 android.ndk = 25b
