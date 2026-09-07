@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Cifciler Insaat v3.0 — Android (Kivy) metraj / kesif / santiye."""
+"""Cifciler Insaat v3.1 — sade menuler, metraj iscilik."""
 import math
 from datetime import datetime
 
@@ -353,14 +353,86 @@ CATEGORY_ORDER = [
 ]
 
 HINTS = {
-    "Demir": "Uzunluk = cubuk boyu (m), Genislik = adet.",
-    "Kapi Pencere": "Uzunluk = en (m), Genislik = adet, Derinlik = boy (m).",
-    "Tesisat": "Uzunluk = boru metre, Genislik = parca adedi.",
-    "Elektrik": "Uzunluk = kablo metre, Genislik = priz/anahtar adedi.",
-    "Sarf": "Genislik = adet.",
-    "Supurgelik": "Uzunluk = oda eni, Genislik = oda boyu. Kapı dusumu aciklik kutusuna m.",
-    "Cati": "Mahya ve oluk icin Uzunluk = metre. Digerleri alan.",
+    "Hafriyat": "Uzunluk x genislik x derinlik. Iscilik TL/m3 (kazi/nakliye).",
+    "Beton ve Sap": "Hacim icin 3 olcu. Sap kalinligi ornek: 0.05 (5 cm).",
+    "Beton Karisim": "Santiye karisimi. 3 olcu ile m3.",
+    "BIMS": "Duvar uzunlugu x yukseklik. Kapi/pencere m2 dusulur.",
+    "Tugla": "Duvar uzunlugu x yukseklik. Kapi/pencere m2 dusulur.",
+    "Fayans": "Alan. Istersen bosluk dus. Iscilik TL/m2, malzeme TL/kutu.",
+    "Yapistirici Derz": "Alan. Malzeme TL/kg, iscilik TL/m2.",
+    "Parke": "Oda alani. Malzeme paket/rulo, iscilik TL/m2.",
+    "Alcipan": "Alan. Plaka veya kg.",
+    "Siva ve Boya": "Duvar/tavan alani. Kapi-pencere dusulur.",
+    "Mantolama": "Cephe alani. Pencere dusumu m2.",
+    "Cati": "Kiremit/OSB/membran: alan. Mahya ve oluk: sadece metre.",
+    "Demir": "Cubuk boyu ve adet. Fiyat TL/kg.",
+    "Kapi Pencere": "En, boy, adet.",
+    "Supurgelik": "Oda eni ve boyu. Kapi dusumu metre.",
+    "Tesisat": "Boru: metre. Dirsek/te/nokta: adet.",
+    "Elektrik": "Kablo/oluklu: metre. Priz/anahtar: adet.",
+    "Sarf": "Sadece adet ve malzeme fiyati.",
 }
+
+
+def form_spec(cat, mat):
+    def f(x=None, y=None, z=None, open_=None, malzeme=None, iscilik=None):
+        return {"x": x, "y": y, "z": z, "open": open_, "malzeme": malzeme, "iscilik": iscilik}
+
+    if cat == "Hafriyat":
+        return f("Uzunluk (m)", "Genislik (m)", "Derinlik (m)", None, None, "Iscilik / nakliye (TL/m3)")
+    if cat == "Beton ve Sap":
+        if mat == "Kalip":
+            return f("Uzunluk (m)", "Genislik (m)", None, None, "Kalip (TL/m2)", "Iscilik (TL/m2)")
+        if mat == "Sap":
+            return f("Uzunluk (m)", "Genislik (m)", "Kalinlik (m) ornek 0.05", None, "Sap (TL/m3)", "Iscilik (TL/m3)")
+        return f("Uzunluk (m)", "Genislik (m)", "Kalinlik / yukseklik (m)", None, "Beton (TL/m3)", "Iscilik (TL/m3)")
+    if cat == "Beton Karisim":
+        return f("Uzunluk (m)", "Genislik (m)", "Kalinlik (m)", None, "Beton (TL/m3)", "Iscilik (TL/m3)")
+    if cat in ("BIMS", "Tugla"):
+        return f("Duvar uzunlugu (m)", "Duvar yuksekligi (m)", None, "Kapi + pencere (m2)", "Malzeme (TL/adet)", "Iscilik (TL/m2)")
+    if cat == "Fayans":
+        return f("Uzunluk (m)", "Genislik (m)", None, "Bosluk dusumu (m2)", "Malzeme (TL/kutu)", "Iscilik (TL/m2)")
+    if cat == "Yapistirici Derz":
+        return f("Uzunluk (m)", "Genislik (m)", None, "Bosluk dusumu (m2)", "Malzeme (TL/kg)", "Iscilik (TL/m2)")
+    if cat == "Parke":
+        mal = "Malzeme (TL/rulo)" if mat == "Silte" else "Malzeme (TL/paket)"
+        return f("Uzunluk (m)", "Genislik (m)", None, "Bosluk dusumu (m2)", mal, "Iscilik (TL/m2)")
+    if cat == "Alcipan":
+        mal = "Malzeme (TL/kg)" if "pasta" in mat.lower() else "Malzeme (TL/plaka)"
+        return f("Uzunluk (m)", "Genislik (m)", None, "Bosluk dusumu (m2)", mal, "Iscilik (TL/m2)")
+    if cat == "Siva ve Boya":
+        mal = "Boya (TL/lt)" if "boya" in mat.lower() else "Malzeme (TL/kg)"
+        return f("Uzunluk (m)", "Yukseklik / genislik (m)", None, "Kapi + pencere (m2)", mal, "Iscilik (TL/m2)")
+    if cat == "Mantolama":
+        return f("Uzunluk (m)", "Yukseklik (m)", None, "Pencere dusumu (m2)", "Malzeme (TL/m2)", "Iscilik (TL/m2)")
+    if cat == "Cati":
+        if mat in ("Mahya", "Yagmur olugu"):
+            mal = "Malzeme (TL/adet)" if mat == "Mahya" else "Malzeme (TL/m)"
+            return f("Metre", None, None, None, mal, "Iscilik (TL/m)")
+        if mat == "Marsilya kiremit":
+            mal = "Malzeme (TL/adet)"
+        elif mat == "OSB":
+            mal = "Malzeme (TL/plaka)"
+        else:
+            mal = "Malzeme (TL/m2)"
+        return f("Uzunluk (m)", "Genislik (m)", None, None, mal, "Iscilik (TL/m2)")
+    if cat == "Demir":
+        return f("Cubuk boyu (m)", "Adet", None, None, "Demir (TL/kg)", "Iscilik (TL/kg)")
+    if cat == "Kapi Pencere":
+        return f("En (m)", "Adet", "Boy (m)", None, "Malzeme (TL/m2)", "Iscilik (TL/m2)")
+    if cat == "Supurgelik":
+        return f("Oda eni (m)", "Oda boyu (m)", None, "Kapi dusumu (m)", "Malzeme (TL/m)", "Iscilik (TL/m)")
+    if cat == "Tesisat":
+        if mat in ("Dirsek", "Te", "Tesisat noktasi"):
+            return f(None, "Adet", None, None, "Malzeme (TL/adet)", "Iscilik (TL/adet)")
+        return f("Boru (m)", None, None, None, "Malzeme (TL/m)", "Iscilik (TL/m)")
+    if cat == "Elektrik":
+        if mat in ("Priz", "Anahtar"):
+            return f(None, "Adet", None, None, "Malzeme (TL/adet)", "Iscilik (TL/adet)")
+        return f("Metre", None, None, None, "Malzeme (TL/m)", "Iscilik (TL/m)")
+    if cat == "Sarf":
+        return f(None, "Adet", None, None, "Malzeme (TL/adet)", None)
+    return f("Uzunluk (m)", "Genislik (m)", "Derinlik (m)", None, "Malzeme (TL)", "Iscilik (TL)")
 
 
 def ui_label(text, size=14, h=26, bold=False):
@@ -386,7 +458,7 @@ class MenuScreen(Screen):
         box = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(8), size_hint_y=None)
         box.bind(minimum_height=box.setter("height"))
         box.add_widget(ui_label("CIFCILER INSAAT", 24, 46, True))
-        box.add_widget(ui_label("v3.0  •  Android metraj / kesif / santiye", 13, 28))
+        box.add_widget(ui_label("v3.1  •  sade menuler, metraj iscilik", 13, 28))
         box.add_widget(ui_btn("SEPET / KESIF", self.go_sepet, 50, 17))
         box.add_widget(ui_btn("SANTIYE PROGRAMI", self.go_santiye, 50, 17))
         box.add_widget(ui_btn("AYARLAR", self.go_ayar, 50, 17))
@@ -432,19 +504,20 @@ class HesapScreen(Screen):
         self.lbl_hint = ui_label("", 13, 48)
         box.add_widget(self.lbl_hint)
         box.add_widget(ui_label("OLCULER", 15, 28, True))
-        self.in_x = self._field(box, "Uzunluk / En / Cubuk boyu / Metre")
-        self.in_y = self._field(box, "Genislik / Adet")
-        self.in_z = self._field(box, "Derinlik / Yukseklik / Boy (m)", "1")
-        self.in_open = self._field(box, "Kapi + pencere dusumu (m2)", "0")
+        self.lab_x, self.in_x = self._field(box, "Uzunluk (m)")
+        self.lab_y, self.in_y = self._field(box, "Genislik (m)")
+        self.lab_z, self.in_z = self._field(box, "Derinlik (m)", "1")
+        self.lab_open, self.in_open = self._field(box, "Kapi + pencere (m2)", "0")
         box.add_widget(ui_label("MALZEME / FIRE / FIYAT", 15, 28, True))
         self.spinner = Spinner(text="", values=[], size_hint_y=None, height=dp(50), font_size=sp(14))
+        self.spinner.bind(text=self._on_mat)
         box.add_widget(self.spinner)
         self.sp_fire = Spinner(
             text="%10 Fire", values=["%5 Fire", "%10 Fire", "%15 Fire"],
             size_hint_y=None, height=dp(46), font_size=sp(14))
         box.add_widget(self.sp_fire)
-        self.in_fiyat_m = self._field(box, "Malzeme birim fiyati (TL / kutu, adet, kg)", "0")
-        self.in_fiyat_i = self._field(box, "Iscilik METRAJ fiyati (TL / m2, m3, m)", "0")
+        self.lab_fm, self.in_fiyat_m = self._field(box, "Malzeme fiyati", "0")
+        self.lab_fi, self.in_fiyat_i = self._field(box, "Iscilik metraj fiyati", "0")
         row = BoxLayout(size_hint_y=None, height=dp(52), spacing=dp(8))
         row.add_widget(ui_btn("TEMIZLE", self.temizle, 52, 15))
         row.add_widget(ui_btn("HESAPLA", self.hesapla, 52, 16))
@@ -464,12 +537,44 @@ class HesapScreen(Screen):
         self.add_widget(scroll)
 
     def _field(self, box, caption, default=""):
-        box.add_widget(ui_label(caption, 13, 22))
+        lab = ui_label(caption, 13, 22)
+        box.add_widget(lab)
         f = TextInput(
             text=default, input_filter="float", multiline=False, font_size=sp(18),
             size_hint_y=None, height=dp(46), padding=[dp(10), dp(8)])
         box.add_widget(f)
-        return f
+        return lab, f
+
+    def _toggle(self, lab, inp, label, fallback):
+        if label:
+            lab.text = label
+            lab.height = dp(22)
+            lab.opacity = 1
+            inp.disabled = False
+            inp.opacity = 1
+            inp.height = dp(46)
+        else:
+            lab.text = ""
+            lab.height = 0
+            lab.opacity = 0
+            inp.disabled = True
+            inp.opacity = 0
+            inp.height = 0
+            inp.text = fallback
+
+    def apply_form(self):
+        spec = form_spec(self.category, self.spinner.text)
+        self._toggle(self.lab_x, self.in_x, spec["x"], "")
+        self._toggle(self.lab_y, self.in_y, spec["y"], "")
+        self._toggle(self.lab_z, self.in_z, spec["z"], "1")
+        self._toggle(self.lab_open, self.in_open, spec["open"], "0")
+        self._toggle(self.lab_fm, self.in_fiyat_m, spec["malzeme"], "0")
+        self._toggle(self.lab_fi, self.in_fiyat_i, spec["iscilik"], "0")
+
+    def _on_mat(self, _inst, _val):
+        if not self.spinner.text:
+            return
+        self.apply_form()
 
     def set_category(self, cat):
         app = App.get_running_app()
@@ -477,12 +582,20 @@ class HesapScreen(Screen):
         self.materials = CATEGORIES[cat]
         keys = list(self.materials.keys())
         self.lbl_baslik.text = "[b]{}[/b]".format(cat.upper())
-        self.lbl_hint.text = HINTS.get(
-            cat, "Uzunluk x Genislik = alan. Derinlik hacim icindir. Kapi/pencere dusulur.")
+        self.lbl_hint.text = HINTS.get(cat, "")
         self.spinner.values = keys
         self.spinner.text = keys[0]
         self.sp_fire.text = app.fire_label
-        self.temizle(None)
+        self.apply_form()
+        self.in_x.text = "" if form_spec(cat, keys[0])["x"] else self.in_x.text
+        self.in_y.text = "" if form_spec(cat, keys[0])["y"] else self.in_y.text
+        if form_spec(cat, keys[0])["z"]:
+            self.in_z.text = "1"
+        self.in_open.text = "0"
+        self.in_fiyat_m.text = "0"
+        self.in_fiyat_i.text = "0"
+        self.last = None
+        self.lbl_sonuc.text = "Olcu gir, HESAPLA'ya bas."
 
     def go_menu(self, _inst):
         self.manager.transition = SlideTransition(direction="right")
@@ -504,8 +617,9 @@ class HesapScreen(Screen):
             res = self.materials[self.spinner.text](args)
             if res["miktar"] <= 0:
                 raise ValueError
-            fm = _num(self.in_fiyat_m.text)
-            fi = _num(self.in_fiyat_i.text)
+            spec = form_spec(self.category, self.spinner.text)
+            fm = _num(self.in_fiyat_m.text) if spec["malzeme"] else 0.0
+            fi = _num(self.in_fiyat_i.text) if spec["iscilik"] else 0.0
             mal = res["miktar"] * fm
             met = res.get("metraj", res["miktar"])
             mb = res.get("metraj_birim", res["birim"])
@@ -516,14 +630,13 @@ class HesapScreen(Screen):
             if res.get("gun", 0) > 0:
                 extra += "\nUsta gunu (tahmini): {:.1f}".format(res["gun"])
             if fm or fi:
-                extra += (
-                    "\n---\nMalzeme: {:.2f} {} x {:.2f} = {:.2f} TL"
-                    "\nIscilik: {:.2f} {} x {:.2f} = {:.2f} TL"
-                    "\nAra toplam: {:.2f} TL"
-                ).format(
-                    res["miktar"], res["birim"], fm, mal,
-                    met, mb, fi, isc, ara,
-                )
+                extra += "\n---"
+                if spec["malzeme"]:
+                    extra += "\nMalzeme: {:.2f} {} x {:.2f} = {:.2f} TL".format(
+                        res["miktar"], res["birim"], fm, mal)
+                if spec["iscilik"]:
+                    extra += "\nIscilik: {:.2f} {} x {:.2f} = {:.2f} TL".format(met, mb, fi, isc)
+                extra += "\nAra toplam: {:.2f} TL".format(ara)
                 if app.kdv_on:
                     extra += "\nKDV %20: {:.2f} TL\nGenel: {:.2f} TL".format(kdv, ara + kdv)
             text = res["text"] + extra
@@ -555,13 +668,19 @@ class HesapScreen(Screen):
         self.lbl_sonuc.text = txt + "\n\n[ Panoya kopyalandi ]"
 
     def temizle(self, _inst):
-        self.in_x.text = ""
-        self.in_y.text = ""
-        self.in_z.text = "1"
-        self.in_open.text = "0"
-        keys = list(self.materials.keys())
-        if keys:
-            self.spinner.text = keys[0]
+        spec = form_spec(self.category, self.spinner.text)
+        if spec["x"]:
+            self.in_x.text = ""
+        if spec["y"]:
+            self.in_y.text = ""
+        if spec["z"]:
+            self.in_z.text = "1"
+        if spec["open"]:
+            self.in_open.text = "0"
+        if spec["malzeme"]:
+            self.in_fiyat_m.text = "0"
+        if spec["iscilik"]:
+            self.in_fiyat_i.text = "0"
         self.last = None
         self.lbl_sonuc.text = "Olcu gir, HESAPLA'ya bas."
 
@@ -593,7 +712,7 @@ class SepetScreen(Screen):
         app = App.get_running_app()
         if not app.cart:
             return "Sepet bos. Metrajdan kalem ekle."
-        lines = ["CIFCILER INSAAT v3.0", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
+        lines = ["CIFCILER INSAAT v3.1", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
         m_tot = i_tot = k_tot = g_tot = 0.0
         for i, it in enumerate(app.cart, 1):
             lines.append("{}. {} / {}".format(i, it["kat"], it["malzeme"]))
