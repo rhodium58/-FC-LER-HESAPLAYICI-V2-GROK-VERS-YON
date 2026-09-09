@@ -3,7 +3,7 @@
 title = Cifciler Insaat
 package.name = cifciler
 package.domain = org.cifciler
-version = 5.1
+version = 5.2
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,txt
