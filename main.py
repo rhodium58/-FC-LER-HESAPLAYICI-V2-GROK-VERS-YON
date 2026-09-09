@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Cifciler Insaat v5.1 — Android acilis duzeltmesi, DXF, PDF."""
+"""Cifciler Insaat v5.2 — Android acilis duzeltmesi, DXF, PDF."""
 import math
 import os
 import traceback
@@ -8,7 +8,7 @@ from datetime import datetime
 from kivy.app import App
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
-from kivy.metrics import dp, sp
+from kivy.metrics import dp, sp as kvsp
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -538,7 +538,7 @@ def aggregate_list(cart):
 def format_liste(cart, proje=""):
     if not cart:
         return "Liste bos. Mahal paketi veya metrajdan kalem ekle."
-    lines = ["CIFCILER INSAAT v5.1", "MALZEME LISTESI"]
+    lines = ["CIFCILER INSAAT v5.2", "MALZEME LISTESI"]
     if proje:
         lines.append("Proje: " + proje)
     lines.append(datetime.now().strftime("%d.%m.%Y %H:%M"))
@@ -668,7 +668,7 @@ def export_liste_pdf(cart, proje=""):
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     safe = _ascii_tr(proje or "liste").replace(" ", "_")[:24] or "liste"
     path = pdf_target("Cifciler_{}_{}.pdf".format(safe, stamp))
-    write_simple_pdf(path, text, title="Cifciler Insaat v5.1")
+    write_simple_pdf(path, text, title="Cifciler Insaat v5.2")
     return path, text
 
 
@@ -825,7 +825,7 @@ DEFAULT_PAKET = {
 def ui_label(text, size=14, h=26, bold=False):
     lab = Label(
         text=("[b]{}[/b]".format(text) if bold else text),
-        markup=True, font_size=sp(size), size_hint_y=None, height=dp(h),
+        markup=True, font_size=kvsp(size), size_hint_y=None, height=dp(h),
         halign="left", valign="middle", color=(0.95, 0.94, 0.90, 1),
     )
     lab.bind(size=lambda inst, val: setattr(inst, "text_size", val))
@@ -833,7 +833,7 @@ def ui_label(text, size=14, h=26, bold=False):
 
 
 def ui_btn(text, handler, h=52, size=16):
-    b = Button(text=text, font_size=sp(size), bold=True, size_hint_y=None, height=dp(h))
+    b = Button(text=text, font_size=kvsp(size), bold=True, size_hint_y=None, height=dp(h))
     b.bind(on_press=handler)
     return b
 
@@ -845,7 +845,7 @@ class MenuScreen(Screen):
         box = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(8), size_hint_y=None)
         box.bind(minimum_height=box.setter("height"))
         box.add_widget(ui_label("CIFCILER INSAAT", 24, 46, True))
-        box.add_widget(ui_label("v5.1  •  DXF + PDF malzeme listesi", 13, 28))
+        box.add_widget(ui_label("v5.2  •  DXF + PDF malzeme listesi", 13, 28))
         box.add_widget(ui_btn("CAD / DXF YUKLE", self.go_cad, 50, 17))
         box.add_widget(ui_btn("MAHALLER", self.go_mahal, 50, 17))
         box.add_widget(ui_btn("MALZEME LISTESI", self.go_liste, 50, 17))
@@ -915,19 +915,19 @@ class HesapScreen(Screen):
         zrow.add_widget(self.lab_z)
         self.sp_zunit = Spinner(
             text="metre", values=["metre", "cm"],
-            size_hint_x=0.42, size_hint_y=None, height=dp(22), font_size=sp(12))
+            size_hint_x=0.42, size_hint_y=None, height=dp(22), font_size=kvsp(12))
         zrow.add_widget(self.sp_zunit)
         box.add_widget(zrow)
         self.zrow = zrow
         self.in_z = TextInput(
-            text="1", input_filter="float", multiline=False, font_size=sp(18),
+            text="1", input_filter="float", multiline=False, font_size=kvsp(18),
             size_hint_y=None, height=dp(46), padding=[dp(10), dp(8)])
         box.add_widget(self.in_z)
         self.lab_kapi = ui_label("KAPI (en x boy, m)", 13, 22)
         box.add_widget(self.lab_kapi)
         krow = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(8))
-        self.in_ke = TextInput(text="", hint_text="en", input_filter="float", multiline=False, font_size=sp(16), padding=[dp(8), dp(8)])
-        self.in_kb = TextInput(text="", hint_text="boy", input_filter="float", multiline=False, font_size=sp(16), padding=[dp(8), dp(8)])
+        self.in_ke = TextInput(text="", hint_text="en", input_filter="float", multiline=False, font_size=kvsp(16), padding=[dp(8), dp(8)])
+        self.in_kb = TextInput(text="", hint_text="boy", input_filter="float", multiline=False, font_size=kvsp(16), padding=[dp(8), dp(8)])
         krow.add_widget(self.in_ke)
         krow.add_widget(self.in_kb)
         box.add_widget(krow)
@@ -935,19 +935,19 @@ class HesapScreen(Screen):
         self.lab_pen = ui_label("PENCERE (en x boy, m)", 13, 22)
         box.add_widget(self.lab_pen)
         prow = BoxLayout(size_hint_y=None, height=dp(46), spacing=dp(8))
-        self.in_pe = TextInput(text="", hint_text="en", input_filter="float", multiline=False, font_size=sp(16), padding=[dp(8), dp(8)])
-        self.in_pb = TextInput(text="", hint_text="boy", input_filter="float", multiline=False, font_size=sp(16), padding=[dp(8), dp(8)])
+        self.in_pe = TextInput(text="", hint_text="en", input_filter="float", multiline=False, font_size=kvsp(16), padding=[dp(8), dp(8)])
+        self.in_pb = TextInput(text="", hint_text="boy", input_filter="float", multiline=False, font_size=kvsp(16), padding=[dp(8), dp(8)])
         prow.add_widget(self.in_pe)
         prow.add_widget(self.in_pb)
         box.add_widget(prow)
         self.prow = prow
         box.add_widget(ui_label("MALZEME / FIRE / FIYAT", 15, 28, True))
-        self.spinner = Spinner(text="", values=[], size_hint_y=None, height=dp(50), font_size=sp(14))
+        self.spinner = Spinner(text="", values=[], size_hint_y=None, height=dp(50), font_size=kvsp(14))
         self.spinner.bind(text=self._on_mat)
         box.add_widget(self.spinner)
         self.sp_fire = Spinner(
             text="%10 Fire", values=["%5 Fire", "%10 Fire", "%15 Fire"],
-            size_hint_y=None, height=dp(46), font_size=sp(14))
+            size_hint_y=None, height=dp(46), font_size=kvsp(14))
         box.add_widget(self.sp_fire)
         self.lab_fm, self.in_fiyat_m = self._field(box, "Malzeme fiyati", "0")
         self.lab_fi, self.in_fiyat_i = self._field(box, "Iscilik metraj fiyati", "0")
@@ -961,7 +961,7 @@ class HesapScreen(Screen):
         box.add_widget(row2)
         box.add_widget(ui_label("SONUC", 15, 28, True))
         self.lbl_sonuc = Label(
-            text="Olcu gir, HESAPLA'ya bas.", font_size=sp(15),
+            text="Olcu gir, HESAPLA'ya bas.", font_size=kvsp(15),
             size_hint_y=None, height=dp(250), halign="center", valign="top",
             color=(0.95, 0.94, 0.90, 1))
         self.lbl_sonuc.bind(size=lambda i, v: setattr(i, "text_size", v))
@@ -973,7 +973,7 @@ class HesapScreen(Screen):
         lab = ui_label(caption, 13, 22)
         box.add_widget(lab)
         f = TextInput(
-            text=default, input_filter="float", multiline=False, font_size=sp(18),
+            text=default, input_filter="float", multiline=False, font_size=kvsp(18),
             size_hint_y=None, height=dp(46), padding=[dp(10), dp(8)])
         box.add_widget(f)
         return lab, f
@@ -1215,7 +1215,7 @@ class SepetScreen(Screen):
         row.add_widget(ui_btn("TEMIZLE", self.temizle, 46, 14))
         root.add_widget(row)
         self.lbl = Label(
-            text="", font_size=sp(14), halign="left", valign="top",
+            text="", font_size=kvsp(14), halign="left", valign="top",
             color=(0.95, 0.94, 0.90, 1))
         self.lbl.bind(size=lambda i, v: setattr(i, "text_size", v))
         sc = ScrollView()
@@ -1231,7 +1231,7 @@ class SepetScreen(Screen):
         app = App.get_running_app()
         if not app.cart:
             return "Sepet bos. Metrajdan kalem ekle."
-        lines = ["CIFCILER INSAAT v5.1", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
+        lines = ["CIFCILER INSAAT v5.2", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
         m_tot = i_tot = k_tot = g_tot = 0.0
         for i, it in enumerate(app.cart, 1):
             lines.append("{}. {} / {}".format(i, it["kat"], it["malzeme"]))
@@ -1311,7 +1311,7 @@ class SantiyeScreen(Screen):
         box = BoxLayout(orientation="vertical", spacing=dp(8), size_hint_y=None)
         box.bind(minimum_height=box.setter("height"))
         for name in PHASES:
-            b = Button(text=name, font_size=sp(15), size_hint_y=None, height=dp(48))
+            b = Button(text=name, font_size=kvsp(15), size_hint_y=None, height=dp(48))
             b.bind(on_press=self._toggle(name))
             self.phase_btns.append((name, b))
             box.add_widget(b)
@@ -1345,32 +1345,32 @@ class MahalScreen(Screen):
         root.add_widget(ui_label("MAHALLER", 22, 40, True))
         root.add_widget(ui_btn("< ANA MENU", self.go_menu, 44, 15))
         self.in_proje = TextInput(
-            hint_text="Proje adi", multiline=False, font_size=sp(16),
+            hint_text="Proje adi", multiline=False, font_size=kvsp(16),
             size_hint_y=None, height=dp(44), padding=[dp(10), dp(8)])
         root.add_widget(self.in_proje)
         self.in_ad = TextInput(
-            hint_text="Mahal adi (Salon, Mutfak...)", multiline=False, font_size=sp(16),
+            hint_text="Mahal adi (Salon, Mutfak...)", multiline=False, font_size=kvsp(16),
             size_hint_y=None, height=dp(44), padding=[dp(10), dp(8)])
         root.add_widget(self.in_ad)
         row = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
-        self.in_en = TextInput(hint_text="en m", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
-        self.in_boy = TextInput(hint_text="boy m", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
-        self.in_h = TextInput(hint_text="yukseklik m", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
+        self.in_en = TextInput(hint_text="en m", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
+        self.in_boy = TextInput(hint_text="boy m", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
+        self.in_h = TextInput(hint_text="yukseklik m", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
         row.add_widget(self.in_en)
         row.add_widget(self.in_boy)
         row.add_widget(self.in_h)
         root.add_widget(row)
         root.add_widget(ui_label("Kapi en x boy (m)", 13, 20))
         krow = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
-        self.in_ke = TextInput(hint_text="kapi en", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
-        self.in_kb = TextInput(hint_text="kapi boy", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
+        self.in_ke = TextInput(hint_text="kapi en", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
+        self.in_kb = TextInput(hint_text="kapi boy", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
         krow.add_widget(self.in_ke)
         krow.add_widget(self.in_kb)
         root.add_widget(krow)
         root.add_widget(ui_label("Pencere en x boy (m)", 13, 20))
         prow = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(6))
-        self.in_pe = TextInput(hint_text="pencere en", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
-        self.in_pb = TextInput(hint_text="pencere boy", input_filter="float", multiline=False, font_size=sp(15), padding=[dp(8), dp(8)])
+        self.in_pe = TextInput(hint_text="pencere en", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
+        self.in_pb = TextInput(hint_text="pencere boy", input_filter="float", multiline=False, font_size=kvsp(15), padding=[dp(8), dp(8)])
         prow.add_widget(self.in_pe)
         prow.add_widget(self.in_pb)
         root.add_widget(prow)
@@ -1459,7 +1459,7 @@ class PaketScreen(Screen):
         box.add_widget(ui_btn("LISTEYE EKLE", self.uygula, 52, 16))
         box.add_widget(ui_btn("TUM MAHALLERE UYGULA", self.uygula_hepsi, 52, 16))
         self.lbl_sonuc = Label(
-            text="", font_size=sp(14), size_hint_y=None, height=dp(220),
+            text="", font_size=kvsp(14), size_hint_y=None, height=dp(220),
             halign="left", valign="top", color=(0.95, 0.94, 0.90, 1))
         self.lbl_sonuc.bind(size=lambda i, v: setattr(i, "text_size", v))
         box.add_widget(self.lbl_sonuc)
@@ -1468,9 +1468,12 @@ class PaketScreen(Screen):
 
     def _spin(self, box, caption, values):
         box.add_widget(ui_label(caption, 13, 22))
-        sp = Spinner(text=values[0], values=values, size_hint_y=None, height=dp(46), font_size=sp(14))
-        box.add_widget(sp)
-        return sp
+        vals = list(values) if values else ["Yok"]
+        spin = Spinner(
+            text=vals[0], values=vals,
+            size_hint_y=None, height=dp(46), font_size=kvsp(14))
+        box.add_widget(spin)
+        return spin
 
     def set_mahal(self, idx):
         self.idx = idx
@@ -1567,23 +1570,23 @@ class CadScreen(Screen):
         self.sp_dosya = Spinner(
             text="DXF dosyasi sec",
             values=["DXF dosyasi sec"],
-            size_hint_y=None, height=dp(48), font_size=sp(13))
+            size_hint_y=None, height=dp(48), font_size=kvsp(13))
         root.add_widget(self.sp_dosya)
         self.in_path = TextInput(
             text="", hint_text="veya tam yol /storage/emulated/0/Download/plan.dxf",
-            multiline=False, font_size=sp(13), size_hint_y=None, height=dp(44),
+            multiline=False, font_size=kvsp(13), size_hint_y=None, height=dp(44),
             padding=[dp(10), dp(8)])
         root.add_widget(self.in_path)
         root.add_widget(ui_btn("DOWNLOAD TARA", self.tara, 46, 14))
         self.in_h = TextInput(
             text="2.70", hint_text="Varsayilan yukseklik m", input_filter="float",
-            multiline=False, font_size=sp(16), size_hint_y=None, height=dp(44),
+            multiline=False, font_size=kvsp(16), size_hint_y=None, height=dp(44),
             padding=[dp(10), dp(8)])
         root.add_widget(self.in_h)
         self.sp_kapi = Spinner(
             text="Varsayilan kapi/pencere: Evet",
             values=["Varsayilan kapi/pencere: Evet", "Kapi/pencere yok"],
-            size_hint_y=None, height=dp(46), font_size=sp(14))
+            size_hint_y=None, height=dp(46), font_size=kvsp(14))
         root.add_widget(self.sp_kapi)
         row = BoxLayout(size_hint_y=None, height=dp(48), spacing=dp(8))
         row.add_widget(ui_btn("OKU", self.oku, 48, 15))
@@ -1591,7 +1594,7 @@ class CadScreen(Screen):
         root.add_widget(row)
         root.add_widget(ui_btn("KOMPLE LISTE (FIYATSIZ)", self.komple, 50, 16))
         self.lbl = Label(
-            text="DXF sec, OKU.", font_size=sp(14), halign="left", valign="top",
+            text="DXF sec, OKU.", font_size=kvsp(14), halign="left", valign="top",
             color=(0.95, 0.94, 0.90, 1))
         self.lbl.bind(size=lambda i, v: setattr(i, "text_size", v))
         sc = ScrollView()
@@ -1751,7 +1754,7 @@ class ListeScreen(Screen):
         row.add_widget(ui_btn("SEPETE GIT", self.go_sepet, 46, 14))
         root.add_widget(row)
         self.lbl = Label(
-            text="", font_size=sp(14), halign="left", valign="top",
+            text="", font_size=kvsp(14), halign="left", valign="top",
             color=(0.95, 0.94, 0.90, 1))
         self.lbl.bind(size=lambda i, v: setattr(i, "text_size", v))
         sc = ScrollView()
@@ -1806,7 +1809,7 @@ class HesaplaApp(App):
             box = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(8))
             lab = Label(
                 text="Acilis hatasi:\n" + traceback.format_exc()[:1800],
-                font_size=sp(13), halign="left", valign="top",
+                font_size=kvsp(13), halign="left", valign="top",
                 color=(0.95, 0.94, 0.90, 1))
             lab.bind(size=lambda i, v: setattr(i, "text_size", v))
             box.add_widget(lab)
