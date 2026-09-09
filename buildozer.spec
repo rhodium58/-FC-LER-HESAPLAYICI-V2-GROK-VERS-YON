@@ -6,7 +6,7 @@ version = 5.3
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,json,txt
-source.filename = main.py
+source.filename = loader.py
 
 requirements = python3,kivy==2.2.1
 
