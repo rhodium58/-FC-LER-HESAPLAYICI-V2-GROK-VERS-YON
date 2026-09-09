@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Cifciler Insaat v5.0 — stabil DXF, malzeme listesi PDF."""
+"""Cifciler Insaat v5.1 — Android acilis duzeltmesi, DXF, PDF."""
 import math
 import os
+import traceback
 from datetime import datetime
 
 from kivy.app import App
@@ -9,7 +10,6 @@ from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
 from kivy.storage.jsonstore import JsonStore
-from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -17,8 +17,6 @@ from kivy.uix.screenmanager import Screen, ScreenManager, SlideTransition
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
-
-Window.clearcolor = (0.07, 0.07, 0.06, 1)
 
 DEMIR_KG = {
     "Fi 8": 0.395, "Fi 10": 0.617, "Fi 12": 0.888, "Fi 14": 1.208,
@@ -540,7 +538,7 @@ def aggregate_list(cart):
 def format_liste(cart, proje=""):
     if not cart:
         return "Liste bos. Mahal paketi veya metrajdan kalem ekle."
-    lines = ["CIFCILER INSAAT v5.0", "MALZEME LISTESI"]
+    lines = ["CIFCILER INSAAT v5.1", "MALZEME LISTESI"]
     if proje:
         lines.append("Proje: " + proje)
     lines.append(datetime.now().strftime("%d.%m.%Y %H:%M"))
@@ -670,7 +668,7 @@ def export_liste_pdf(cart, proje=""):
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     safe = _ascii_tr(proje or "liste").replace(" ", "_")[:24] or "liste"
     path = pdf_target("Cifciler_{}_{}.pdf".format(safe, stamp))
-    write_simple_pdf(path, text, title="Cifciler Insaat v5.0")
+    write_simple_pdf(path, text, title="Cifciler Insaat v5.1")
     return path, text
 
 
@@ -847,7 +845,7 @@ class MenuScreen(Screen):
         box = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(8), size_hint_y=None)
         box.bind(minimum_height=box.setter("height"))
         box.add_widget(ui_label("CIFCILER INSAAT", 24, 46, True))
-        box.add_widget(ui_label("v5.0  •  DXF + PDF malzeme listesi", 13, 28))
+        box.add_widget(ui_label("v5.1  •  DXF + PDF malzeme listesi", 13, 28))
         box.add_widget(ui_btn("CAD / DXF YUKLE", self.go_cad, 50, 17))
         box.add_widget(ui_btn("MAHALLER", self.go_mahal, 50, 17))
         box.add_widget(ui_btn("MALZEME LISTESI", self.go_liste, 50, 17))
@@ -1233,7 +1231,7 @@ class SepetScreen(Screen):
         app = App.get_running_app()
         if not app.cart:
             return "Sepet bos. Metrajdan kalem ekle."
-        lines = ["CIFCILER INSAAT v5.0", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
+        lines = ["CIFCILER INSAAT v5.1", datetime.now().strftime("%d.%m.%Y %H:%M"), ""]
         m_tot = i_tot = k_tot = g_tot = 0.0
         for i, it in enumerate(app.cart, 1):
             lines.append("{}. {} / {}".format(i, it["kat"], it["malzeme"]))
@@ -1564,12 +1562,19 @@ class CadScreen(Screen):
         root.add_widget(ui_label("CAD / DXF", 22, 40, True))
         root.add_widget(ui_btn("< ANA MENU", self.go_menu, 44, 15))
         root.add_widget(ui_label(
-            "DWG acilmaz. AutoCAD: Farkli Kaydet -> DXF (ASCII). Kapali oda cizgileri mahal olur.",
+            "DWG acilmaz. AutoCAD: Farkli Kaydet -> DXF (ASCII). Dosyayi Download klasorune koy.",
             13, 56))
-        self.fc = FileChooserListView(
-            filters=["*.dxf", "*.DXF", "*.cad", "*.txt"],
-            size_hint_y=0.42)
-        root.add_widget(self.fc)
+        self.sp_dosya = Spinner(
+            text="DXF dosyasi sec",
+            values=["DXF dosyasi sec"],
+            size_hint_y=None, height=dp(48), font_size=sp(13))
+        root.add_widget(self.sp_dosya)
+        self.in_path = TextInput(
+            text="", hint_text="veya tam yol /storage/emulated/0/Download/plan.dxf",
+            multiline=False, font_size=sp(13), size_hint_y=None, height=dp(44),
+            padding=[dp(10), dp(8)])
+        root.add_widget(self.in_path)
+        root.add_widget(ui_btn("DOWNLOAD TARA", self.tara, 46, 14))
         self.in_h = TextInput(
             text="2.70", hint_text="Varsayilan yukseklik m", input_filter="float",
             multiline=False, font_size=sp(16), size_hint_y=None, height=dp(44),
@@ -1595,13 +1600,58 @@ class CadScreen(Screen):
         self.add_widget(root)
 
     def on_pre_enter(self, *_a):
-        for p in ("/storage/emulated/0/Download", "/sdcard/Download", "/storage/emulated/0", os.getcwd()):
-            if os.path.isdir(p):
-                try:
-                    self.fc.path = p
-                except Exception:
-                    pass
-                break
+        self.tara(None)
+
+    def _dxf_roots(self):
+        roots = [
+            "/storage/emulated/0/Download",
+            "/storage/emulated/0/Downloads",
+            "/sdcard/Download",
+            "/storage/emulated/0/Documents",
+            "/sdcard/Documents",
+            os.getcwd(),
+        ]
+        try:
+            app = App.get_running_app()
+            if app:
+                roots.append(app.user_data_dir)
+        except Exception:
+            pass
+        out = []
+        for p in roots:
+            if p and p not in out and os.path.isdir(p):
+                out.append(p)
+        return out
+
+    def tara(self, _inst):
+        found = []
+        for root in self._dxf_roots():
+            try:
+                for name in os.listdir(root):
+                    low = name.lower()
+                    if low.endswith((".dxf", ".txt", ".cad")):
+                        found.append(os.path.join(root, name))
+            except Exception:
+                continue
+        found = sorted(set(found))
+        if found:
+            self.sp_dosya.values = found
+            if self.sp_dosya.text not in found:
+                self.sp_dosya.text = found[0]
+            self.lbl.text = "{} DXF bulundu. Sec, OKU.".format(len(found))
+        else:
+            self.sp_dosya.values = ["DXF yok — Download'a kopyala"]
+            self.sp_dosya.text = "DXF yok — Download'a kopyala"
+            self.lbl.text = "Download klasorunde DXF yok.\nplan.dxf dosyasini Telefona > Download icine koy, sonra DOWNLOAD TARA."
+
+    def _secili_yol(self):
+        p = (self.in_path.text or "").strip()
+        if p and os.path.isfile(p):
+            return p
+        t = self.sp_dosya.text or ""
+        if t and os.path.isfile(t):
+            return t
+        return ""
 
     def go_menu(self, _inst):
         self.manager.transition = SlideTransition(direction="right")
@@ -1621,9 +1671,12 @@ class CadScreen(Screen):
         return out
 
     def oku(self, _inst):
-        path = self.fc.selection[0] if self.fc.selection else ""
+        path = self._secili_yol()
         if not path:
-            self.lbl.text = "Once listeden DXF dosyasi sec."
+            self.tara(None)
+            path = self._secili_yol()
+        if not path:
+            self.lbl.text = "Once DXF sec veya tam yolu yaz. Dosya Download icinde olsun."
             return
         try:
             with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -1747,8 +1800,35 @@ class ListeScreen(Screen):
 class HesaplaApp(App):
     def build(self):
         self.title = "Cifciler Insaat"
-        Window.softinput_mode = "below_target"
-        self.store = JsonStore("cifciler.json")
+        try:
+            return self._build_ui()
+        except Exception:
+            box = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(8))
+            lab = Label(
+                text="Acilis hatasi:\n" + traceback.format_exc()[:1800],
+                font_size=sp(13), halign="left", valign="top",
+                color=(0.95, 0.94, 0.90, 1))
+            lab.bind(size=lambda i, v: setattr(i, "text_size", v))
+            box.add_widget(lab)
+            return box
+
+    def on_start(self):
+        try:
+            Window.clearcolor = (0.07, 0.07, 0.06, 1)
+            Window.softinput_mode = "below_target"
+        except Exception:
+            pass
+
+    def _store_path(self):
+        try:
+            d = self.user_data_dir
+            os.makedirs(d, exist_ok=True)
+            return os.path.join(d, "cifciler.json")
+        except Exception:
+            return "cifciler.json"
+
+    def _build_ui(self):
+        self.store = JsonStore(self._store_path())
         self.cart = []
         self.mahals = []
         self.proje = ""
